@@ -38,18 +38,10 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
         .input-box { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .install-btn {
-            position: fixed; top: 20px; right: 20px;
-            background: var(--primary);
-            color: white; padding: 10px 15px; border-radius: 12px;
-            font-size: 12px; font-weight: bold; cursor: pointer;
-            display: none; z-index: 100;
-        }
     </style>
 </head>
 <body>
 
-    <button id="installBtn" class="install-btn shadow-lg">⬇ ИНСТАЛИРАЙ</button>
     <div class="bg-pattern" id="bgPattern"></div>
 
     <main class="w-full max-w-sm p-5">
@@ -62,8 +54,8 @@
                 <h1 class="text-xl font-bold tracking-tight">DualPay</h1>
             </div>
 
-            <div class="input-box p-4 rounded-2xl relative">
-                <label class="text-[9px] uppercase tracking-widest text-gray-400 block mb-1">Сума за плащане [cite: 26]</label>
+            <div class="input-box p-4 rounded-2xl">
+                <label class="text-[9px] uppercase tracking-widest text-gray-400 block mb-1">Сума за плащане</label>
                 <div class="flex items-center gap-2">
                     <input type="number" id="total" placeholder="0.00" class="bg-transparent text-2xl font-semibold w-full outline-none text-white">
                     <select id="totalCur" class="bg-slate-800 text-[10px] p-2 rounded-lg outline-none">
@@ -75,17 +67,17 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="input-box p-3 rounded-2xl">
-                    <label class="text-[9px] uppercase text-gray-400 block mb-1">Платено в лв [cite: 27]</label>
+                    <label class="text-[9px] uppercase text-gray-400 block mb-1">Платено в лв</label>
                     <input type="number" id="paidBGN" placeholder="0.00" class="bg-transparent text-lg w-full outline-none">
                 </div>
                 <div class="input-box p-3 rounded-2xl">
-                    <label class="text-[9px] uppercase text-gray-400 block mb-1">Платено в € [cite: 27]</label>
+                    <label class="text-[9px] uppercase text-gray-400 block mb-1">Платено в €</label>
                     <input type="number" id="paidEUR" placeholder="0.00" class="bg-transparent text-lg w-full outline-none">
                 </div>
             </div>
 
             <div id="error" class="hidden text-red-400 text-[10px] text-center bg-red-950/30 py-2 rounded-xl border border-red-900/50">
-                Сумата е недостатъчна! [cite: 28]
+                Сумата е недостатъчна!
             </div>
 
             <div id="resultArea" class="opacity-0 transition-all duration-500">
@@ -104,8 +96,8 @@
             </button>
 
             <footer class="mt-2 text-center border-t border-white/5 pt-4">
-                <p class="text-[9px] text-gray-500">Курс: 1 EUR = 1.95583 BGN [cite: 16]</p>
-                <p class="text-[9px] text-gray-600 mt-1 uppercase">© DualPay [cite: 16]</p>
+                <p class="text-[9px] text-gray-500">Курс: 1 EUR = 1.95583 BGN</p>
+                <p class="text-[9px] text-gray-600 mt-1 uppercase tracking-tighter">© [ТВОЕТО ИМЕ]</p>
             </footer>
         </div>
     </main>
@@ -113,9 +105,9 @@
     <script>
         const RATE = 1.95583;
         let activeResCur = 'BGN';
-        let deferredPrompt;
+        let lastSuccess = false;
 
-        // Генератор на фон [cite: 8, 9, 10]
+        // Фон
         const grid = document.getElementById('bgPattern');
         for(let i=0; i<60; i++) {
             const el = document.createElement('div');
@@ -124,7 +116,21 @@
             grid.appendChild(el);
         }
 
-        // Изчисляване в реално време [cite: 28]
+        // Аудио сигнал
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // Изчисляване
         const fields = ['total', 'totalCur', 'paidBGN', 'paidEUR'];
         fields.forEach(f => document.getElementById(f).addEventListener('input', update));
 
@@ -144,12 +150,15 @@
             if (total > 0 && diffBGN < -0.01) {
                 err.classList.remove('hidden');
                 res.classList.add('opacity-0');
+                lastSuccess = false;
             } else if (total > 0 && paidBGN > 0) {
                 err.classList.add('hidden');
                 res.classList.remove('opacity-0');
                 showDiff(diffBGN);
+                if (!lastSuccess) { playBeep(); lastSuccess = true; }
             } else {
                 res.classList.add('opacity-0');
+                lastSuccess = false;
             }
         }
 
@@ -174,43 +183,6 @@
         function clearAll() {
             fields.forEach(f => document.getElementById(f).value = (f === 'totalCur' ? 'BGN' : ''));
             update();
-        }
-
-        // PWA Инсталационен бутон [cite: 20, 21]
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installBtn').style.display = 'block';
-        });
-
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('installBtn').style.display = 'none';
-                }
-                deferredPrompt = null;
-            }
-        });
-
-        // Web Manifest & Service Worker [cite: 20]
-        const manifest = {
-            name: "DualPay Calculator",
-            short_name: "DualPay",
-            display: "standalone",
-            start_url: ".",
-            background_color: "#0F172A",
-            theme_color: "#C5A059",
-            icons: [{ src: "icon.png", sizes: "512x512", type: "image/png" }]
-        };
-        const mBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-        document.head.appendChild(Object.assign(document.createElement('link'), {rel: 'manifest', href: URL.createObjectURL(mBlob)}));
-
-        if ('serviceWorker' in navigator) {
-            const sw = `self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));`;
-            const sBlob = new Blob([sw], {type: 'application/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(sBlob));
         }
     </script>
 </body>
