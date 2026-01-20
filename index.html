@@ -68,7 +68,9 @@ class="hidden bg-red-600 text-white p-2 rounded mb-2 text-center">
 Недостатъчна сума
 </div>
 
+<!-- RESULT -->
 <div id="resultBox" class="hidden text-center">
+
 <p class="font-semibold mb-2">Ресто</p>
 
 <div class="flex justify-center gap-2 mb-2">
@@ -85,9 +87,9 @@ EUR
 <p id="main" class="text-2xl font-bold text-[#FFD700]"></p>
 <p id="secondary" class="text-sm opacity-70"></p>
 
-<!-- SAVE BUTTON -->
+<!-- SAVE -->
 <button onclick="saveHistory()"
-class="mt-3 bg-green-500 text-black px-4 py-2 rounded font-semibold">
+class="mt-3 bg-[#FFD700] text-[#0a1a33] px-4 py-2 rounded-lg font-bold shadow">
 💾 Запази
 </button>
 </div>
@@ -101,7 +103,7 @@ class="max-h-32 overflow-y-auto text-xs space-y-1"></div>
 
 <p class="text-center text-xs mt-4 opacity-70">
 Курс: 1 EUR = 1.95583 BGN<br>
-© ТВОЕТО ИМЕ
+© Теодор Динков
 </p>
 </div>
 
@@ -151,8 +153,7 @@ function saveHistory(){
 if(resultBox.classList.contains("hidden"))return;
 
 const row=document.createElement("div");
-row.className=
-"bg-[#142d55] p-1 rounded";
+row.className="bg-[#142d55] p-1 rounded";
 
 row.innerHTML=
 `Платено: ${lastPaid.toFixed(2)} лв |
@@ -162,7 +163,7 @@ history.prepend(row);
 }
 </script>
 
-<!-- BG -->
+<!-- BACKGROUND -->
 <script>
 for(let i=0;i<30;i++){
 let s=document.createElement("div");
@@ -220,7 +221,7 @@ mlink.href=URL.createObjectURL(blob);
 document.head.appendChild(mlink);
 </script>
 
-<!-- SW -->
+<!-- SERVICE WORKER -->
 <script>
 if("serviceWorker"in navigator){
 const sw=`
